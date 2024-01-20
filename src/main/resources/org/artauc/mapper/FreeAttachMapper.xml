@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="org.artauc.mapper.FreeAttachMapper">
+
+<resultMap type="org.artauc.domain.FreeAttachVO" id="attachMap">
+	
+  		<result property="frno" column="frno"/>
+  		<result property="uuid" column="uuid"/>
+  		<result property="upFolder" column="upFolder"/>
+  		<result property="fileName" column="fileName"/>
+  		<result property="image" column="image"/>
+  		
+  	</resultMap>
+
+
+
+		<select id="selectAll" resultMap="attachMap">  
+		    SELECT * FROM FREEATTACH WHERE frno = #{frno}
+	   </select>
+	   
+	   <insert id="insert" >
+		  	INSERT INTO FREEATTACH(frno, uuid, upFolder, fileName, image )
+		 	VALUES(#{frno}, #{uuid}, #{upFolder}, #{fileName}, #{image} )
+	  </insert>
+	  
+	   <delete id="deleteAll">
+		  DELETE FROM FREEATTACH WHERE frno = #{frno}
+	  </delete>
+	  
+	    
+	  <delete id="delete">
+	 	 DELETE FROM FREEATTACH WHERE uuid = #{uuid}
+	  </delete>
+	    
+	  <!-- 어제 자 목록 출력 -->
+ 	<select id="yesterdayFiles" resultMap="attachMap">
+ 		SELECT * from FREEATTACH
+		WHERE upFolder= TO_CHAR(SYSDATE - 1, 'yyyy\MM\dd') 	
+ 	</select>
+	  
+	  
+	 
+
+</mapper>

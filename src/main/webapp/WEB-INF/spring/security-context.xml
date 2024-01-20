@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+
+	<bean id="customAccessDenide" class="org.artauc.security.CustomAccessDeniedHandler"/>
+	
+	<!--  <bean id="customLoginSuccess" class="org.zerock.security.CustomLoginSuccessHandler"/>  -->
+	
+	<bean id="customUserDetailsService" class="org.artauc.security.CustomUserDetailsService"/>
+	
+	<!-- class 에는 클래스이름을 써주어야한다. -->
+	<!-- <bean id="customPasswordEncoder" class="org.zerock.security.CustormNoOpPasswordEncoder"/> -->
+	
+	<!-- class 에는 클래스이름을 써주어야한다. -->
+	<bean id="bCryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+	
+	<!-- 페이지, 메시지 지정 -->
+	<security:http>
+     <!-- 관리자 메뉴 경로 체크 -->	
+	
+		<security:intercept-url pattern="/sample/all" access="permitAll"/>   <!-- sample 밑에 all로 들어오면 모두 가능  -->
+		<security:intercept-url pattern="/sample/member" access="hasRole('ROLE_MEMBER')"/>   <!-- ROLE이나 권한이 있을 경우에만  -->
+		<security:intercept-url pattern="/sample/admin" access="hasRole('ROLE_ADMIN')"/>   <!-- ROLE이나 권한이 있을 경우에만  -->
+		
+		<!-- 로그인 페이지 지정, 요청은 /Login으로 들어오고 화면은 밑으로 뿌림.  -->
+		<!-- <security:form-login login-page="/customLogin" authentication-success-handler-ref="customLoginSuccess"/>  -->
+		<security:form-login login-page="/artauction/userLogin"/>   <!-- 로그인 페이지 만들고 경로 설정하기  -->
+		
+		<!--remember 에러  -->
+	    <!--<security:remember-me data-source-ref="dataSource" token-validity-seconds="604800"/> -->
+		
+		<!-- 로그아웃 페이지 지정 -->
+		<security:logout logout-url="/userLogout" invalidate-session="true" delete-cookies="JSESSION_ID" logout-success-url="/artauction/main?result=logoutsuccess"/>
+		
+		
+		
+		<!--접근 불가 메시지 설정  -->
+		<!-- <security:access-denied-handler error-page="/accessDenied"/>  접근이 금지 되었을때  -->
+		<security:access-denied-handler ref="customAccessDenide"/> 
+	</security:http>
+	
+	
+	<!-- 인증  -->
+	<security:authentication-manager>	
+	
+		<security:authentication-provider user-service-ref="customUserDetailsService">
+			<!-- <security:user-service>
+				 <security:user name="member" password="{noop}1111" authorities="ROLE_MEMBER"/>
+				<security:user name="admin" password="{noop}1111" authorities="ROLE_ADMIN, ROLE_MEMBER"/>
+			</security:user-service>  -->
+			<!-- <security:jdbc-user-service data-source-ref="dataSource" users-by-username-query="SELECT id, pw, enabled
+																							 FROM tbl_member
+																							 WHERE id=?"
+																	 authorities-by-username-query="SELECT id, auth
+																	 								FROM tbl_member_auth
+																	 								WHERE id=?"/> -->			
+			<!-- <security:jdbc-user-service data-source-ref="dataSource"/>  -->
+			<!-- <security:password-encoder ref="customPasswordEncoder"/> -->
+		
+			<security:password-encoder ref="bCryptPasswordEncoder"/>
+		</security:authentication-provider>
+	</security:authentication-manager>
+
+</beans>

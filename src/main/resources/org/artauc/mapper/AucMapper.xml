@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.artauc.mapper.AucMapper">
+	<sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+			<foreach item="type" collection="typeArr">
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'T'.toString()">
+							ARTNAME LIKE '%'||#{keyword}||'%'
+						</when>
+						<when test="type == 'C'.toString()">
+							ARTIST LIKE '%'||#{keyword}||'%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+
+	<select id="selectAllPaging"
+		resultType="org.artauc.domain.AucVO">
+  	<![CDATA[ 
+    	SELECT ANO, MID, ARTNAME, ARTIST, STARTDATE, ENDDATE, PRICEC, PRICEE, ARTIMG, PAYSTATEMENT
+    	FROM   ( SELECT /*+INDEX_DESC(AUC PK_ANO) */
+    					rownum rn, ANO, MID, ARTNAME, ARTIST, 
+    					STARTDATE, ENDDATE, PRICEC, PRICEE, ARTIMG, PAYSTATEMENT
+    			 FROM   AUC
+    			 WHERE  ]]>
+		<!-- 보관해 둔 쿼리 사용 -->
+		<include refid="criteria"></include>
+    <![CDATA[ 	 		rownum <= #{amount} * #{pageNum})
+    	WHERE  rn > #{amount} * (#{pageNum} - 1)
+    	ORDER BY ANO DESC    	
+    ]]>
+	</select>
+
+	<select id="totalCount" resultType="int">
+  	<![CDATA[ 
+	  	SELECT 	COUNT(*) 
+	  	FROM 	AUC
+	    WHERE	]]>
+		<!-- 보관해 둔 쿼리 사용 -->
+		<include refid="criteria"></include>
+	<![CDATA[ 	ano > 0	]]>
+	</select>
+
+	<select id="myAucCount" resultType="int">
+
+		SELECT COUNT(*)
+		FROM AUC
+		WHERE
+		mid
+		= #{mid}
+	</select>
+
+	<select id="mylist" resultType="org.artauc.domain.AucVO">
+  <![CDATA[
+    SELECT ANO, MID, ARTNAME, ARTIST, STARTDATE, ENDDATE, PRICEC, PRICEE, ARTIMG
+    FROM (
+      SELECT /*+INDEX_DESC(AUC PK_ANO) */ rownum rn, ANO, MID, ARTNAME, ARTIST, 
+    					STARTDATE, ENDDATE, PRICEC, PRICEE, ARTIMG
+      FROM AUC
+       WHERE MID = #{mid}
+   AND rownum <= #{cri.amount} * #{cri.pageNum})
+    WHERE rn > #{cri.amount} * (#{cri.pageNum} - 1)
+    ORDER BY ANO DESC  
+  ]]>
+	</select>
+
+	<select id="sbidCount" resultType="int">
+
+		SELECT COUNT(*)
+		FROM AUC
+		WHERE
+		buyer =
+		#{mid}
+	</select>
+
+	<select id="sbidlist" resultType="org.artauc.domain.AucVO">
+  <![CDATA[
+    SELECT ANO, MID, ARTNAME, PRICEC, PAYSTATEMENT, PAYDATE, BUYER, ENDDATE, ARTIMG
+    FROM (
+      SELECT /*+INDEX_DESC(AUC PK_ANO) */ rownum rn, 
+      ANO, MID, ARTNAME, PRICEC, PAYSTATEMENT, PAYDATE, BUYER, ENDDATE, ARTIMG
+      FROM AUC
+       WHERE buyer =
+		#{mid} AND condition = '경매완료'
+   AND rownum <= #{cri.amount} * #{cri.pageNum})
+    WHERE rn > #{cri.amount} * (#{cri.pageNum} - 1)
+    ORDER BY ANO DESC  
+  ]]>
+	</select>
+
+	<select id="selectart" resultType="org.artauc.domain.ArtVO">
+		SELECT * FROM art WHERE mid =
+		#{mid}
+	</select>
+
+	<select id="selectArtdetail"
+		resultType="org.artauc.domain.ArtVO">
+		SELECT * FROM art WHERE artName = #{artName} and mid = #{mid}
+	</select>
+
+	<insert id="insertSelectKey">
+		<!-- PK 값을 미리 처리해서 ano에 저장 -->
+		<selectKey keyProperty="ano" order="BEFORE" resultType="int">
+			SELECT SEQ_AUC_ANO.NEXTVAL FROM dual
+		</selectKey>
+
+		<!-- 시퀀스 대신 저장해 둔 ano를 사용 -->
+		INSERT INTO AUC (ANO, MID, ARTNAME, ARTIST, STARTDATE, ENDDATE,
+		PRICEC, PRICEE, INTRO, ARTIMG, PRICES)
+		VALUES (#{ano}, #{mid},
+		#{artName}, #{artist}, #{startDate}
+		, #{endDate}, #{priceC}, #{priceE},
+		#{intro}, #{artImg}, #{priceS})
+	</insert>
+
+	<select id="select" resultType="org.artauc.domain.AucVO">
+		SELECT * FROM AUC WHERE ano =
+		#{ano}
+	</select>
+
+	<select id="selectAll" resultType="org.artauc.domain.AucVO">
+		SELECT * FROM AUC WHERE ano >
+		0
+	</select>
+
+	<update id="update">
+		UPDATE AUC
+		SET INTRO = #{intro}, STARTDATE =
+		#{startDate},
+		ENDDATE = #{endDate}, PRICEC = #{priceC}, priceE =
+		#{priceE}, PRICES =
+		#{priceS}, ARTIST =
+		#{artist}
+		WHERE ano = #{ano}
+	</update>
+
+	<delete id="delete">
+		DELETE AUC WHERE ano = #{ano}
+	</delete>
+
+	<!-- <select id="mylist" resultType="org.artauc.domain.AucVO"> SELECT * 
+		FROM AUC WHERE mid = #{mid} </select> -->
+
+	<update id="updateBid">
+		UPDATE AUC
+		SET buyer = #{buyer}, priceC = #{priceC},
+		priceS = priceS + (priceS *
+		0.1)
+		WHERE ano = #{ano}
+	</update>
+
+	<!-- <select id="sbidlist" resultType="org.artauc.domain.AucVO"> SELECT 
+		* FROM AUC WHERE buyer = #{mid} AND condition = '경매완료' </select> -->
+</mapper>

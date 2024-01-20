@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="org.artauc.mapper.ClassReqMapper">
+<!--  -->
+	<resultMap type="org.artauc.domain.ClassReqVO" id="reqMap">
+		<id property="reqno" column="reqno" />
+		<result property="cno" column="cno" />
+ 		<result property="mid" column="mid" />
+		<association property="mvo" javaType="org.artauc.domain.MemberVO">
+			<result property="name" column="name" />
+			<result property="email" column="email" />
+		</association>
+	</resultMap>
+	
+	<resultMap type="org.artauc.domain.ClassReqVO" id="reqMyMap">
+		<id property="reqno" column="reqno" />
+		<result property="cno" column="cno" />
+ 		<result property="mid" column="mid" />
+		<association property="cvo" javaType="org.artauc.domain.ClassVO">
+			<result property="classname" column="class_name" />
+			<result property="classdate" column="class_date" />
+		</association>
+	</resultMap>
+
+	
+	<!-- 클래스 신청 -->
+	<insert id="insertReq">
+		INSERT INTO class_req
+		values(SEQ_CLASS_REQ_reqno.nextval, #{cno}, #{mid})
+	</insert>
+
+	<!-- 클래스 신청자 목록 -->
+	<select id="selectReq"  resultMap="reqMap">
+		SELECT req.reqno, m.mid, m.name, m.email, req.cno
+		FROM class_req req
+		JOIN  a_member m
+		ON m.mid = req.mid WHERE cno=#{cno}
+	</select>	
+
+	<!-- 내 클래스 신청 목록 -->
+ 	<select id="selectMyReq" resultMap="reqMyMap">
+		SELECT req.reqno, req.cno, c.class_name, c.mid, c.class_date
+		FROM class_req req
+		JOIN oneclass c
+		ON req.cno = c.cno WHERE req.mid=#{mid}
+	</select>
+
+	<!-- 클래스 신청 취소 -->
+	<delete id="deleteReq">
+		DELETE class_req WHERE reqno=#{reqno}
+    </delete> 
+    
+    <!-- 클래스 신청 하나 선택 -->
+    <select id="select" resultType="org.artauc.domain.ClassReqVO">
+    	SELECT * FROM class_req WHERE reqno=#{reqno}
+    </select>
+    
+    
+</mapper>

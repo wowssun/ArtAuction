@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.artauc.mapper.FundMapper">
+
+
+
+<resultMap id = "fundMap" type ="org.artauc.domain.FundVO">
+        <id property="fno" column="FNO"/>
+		<result property="mid" column="MID"/>
+        <result property="fundName" column="FUNDNAME"/>
+        <result property="pr" column="PR"/>
+        <result property="targetPrice" column="TARGETPRICE"/>
+        <result property="totalPrice" column="TOTALPRICE"/>
+        <result property="partcpntCnt" column="PARTCPNTCNT"/>
+        <result property="startDate" column="STARTDATE"/>
+        <result property="endDate" column="ENDDATE"/>
+<association property="atvo" javaType="org.artauc.domain.ArtistVO">
+            <id property="mid" column="MID"/>
+            <result property="mayjor" column="MAYJOR"/>
+            <result property="introduce" column="INTRODUCE"/>
+            <result property="photo" column="PHOTO"/>
+           <collection property="careerlist" resultMap="careerMap"/>
+</association>
+<association property="mvo" javaType="org.artauc.domain.MemberVO">
+            <id property="mid" column="MID"/>
+            <result property="name" column="NAME"/>
+</association>
+<association property="avo" javaType="org.artauc.domain.ArtVO">
+            <id property="ano" column="ANO"/>
+            <result property="mid" column="MID"/>
+            <result property="artName" column="ARTNAME"/>
+            <result property="artImg" column="ARTIMG"/>
+</association>
+</resultMap>
+
+  	<resultMap type="org.artauc.domain.CareerVO" id="careerMap">
+ 	 
+ 	 	<id property="carno" column="carno"/>
+
+ 		<result property="carno" column="carno"/>
+ 		<result property="mid" column="mid"/>
+ 		<result property="career" column="career"/>
+ 		
+ 	</resultMap>
+
+
+<resultMap id = "fundpayMap" type ="org.artauc.domain.FundPayVO">
+        <id property="fpno" column="FPNO"/>
+		<result property="mid" column="MID"/>
+        <result property="fno" column="FNO"/>
+        <result property="amount" column="AMOUNT"/>
+        <result property="payDate" column="PAYDATE"/>
+<association property="fvo" javaType="org.artauc.domain.FundVO">
+            <id property="fno" column="FNO"/>
+            <result property="mid" column="MID"/>
+            <result property="fundName" column="FUNDNAME"/>
+</association>
+</resultMap>
+
+
+		
+
+<insert id="insert">
+
+ <!-- PK 값을 미리 처리해서 ano에 저장 -->
+    <selectKey keyProperty="fno" order="BEFORE" resultType="int">
+        SELECT SEQ_FUND_FNO.nextval FROM dual 
+    </selectKey>
+
+    INSERT INTO FUND (FNO, MID, FUNDNAME, PR, TARGETPRICE, STARTDATE, ENDDATE)
+    VALUES (#{fno}, #{mid}, #{fundName}, #{pr}, #{targetPrice}, #{startDate}, #{endDate})
+
+</insert>
+
+<select id="select" resultMap="fundMap">
+
+SELECT *
+FROM (SELECT ROWNUM rn, FUND.*, ARTIST.PHOTO, A_MEMBER.NAME, ART.ANO, ART.ARTNAME, ART.ARTIMG, CAREER.CAREER
+FROM FUND
+JOIN ARTIST ON FUND.MID = ARTIST.MID
+JOIN A_MEMBER ON FUND.MID = A_MEMBER.MID
+JOIN ART ON FUND.MID = ART.MID
+JOIN CAREER ON FUND.MID = CAREER.MID)FUND
+WHERE FNO = #{fno}
+
+
+</select>
+
+
+<select id="selectAllPaging" resultMap="fundMap">
+    <![CDATA[ 
+    SELECT *
+    FROM (
+        SELECT ROWNUM rn, FUND.*, ARTIST.PHOTO, A_MEMBER.NAME
+        FROM FUND
+        JOIN ARTIST ON FUND.MID = ARTIST.MID
+        JOIN A_MEMBER ON FUND.MID = A_MEMBER.MID  
+        WHERE ROWNUM <= #{amount} * #{pageNum} 
+        ORDER BY ]]>
+        <if test="sort != null and sort == 'latest'">
+            FNO DESC
+        </if>
+        <if test="sort != null and sort == 'price'">
+            TOTALPRICE DESC
+        </if>
+        <if test="sort != null and sort == 'deadline'">
+            ENDDATE DESC
+        </if>
+    <![CDATA[ )FUND
+       	WHERE rn > #{amount} * (#{pageNum} - 1)
+    ]]>
+</select>
+
+
+<select id="selectMyFund" resultMap="fundMap">
+<![CDATA[
+    SELECT *
+    FROM ( SELECT ROWNUM rn, FUND.*, ARTIST.PHOTO, A_MEMBER.NAME
+        FROM fund
+        JOIN ARTIST ON FUND.MID = ARTIST.MID
+    	JOIN A_MEMBER ON FUND.MID = A_MEMBER.MID
+        WHERE FUND.MID = #{mid}
+        ORDER BY FNO DESC)FUND
+   		WHERE rownum <= #{cri.amount} * #{cri.pageNum}
+   	    AND rn > #{cri.amount} * (#{cri.pageNum} - 1)    	
+    ]]>
+</select>
+
+<select id="totalCount" resultType="int">
+	<![CDATA[ 
+	  	SELECT 	COUNT(*) 
+	  	FROM 	fund
+	    WHERE
+		FNO > 0	]]>
+</select>
+
+<select id="myFundCount" resultType="int">
+	  	SELECT 	COUNT(*) 
+	  	FROM 	fund
+	    WHERE	MID = #{mid}
+	    
+</select>
+
+<select id="myPayCount" resultType="int">
+	  	SELECT 	COUNT(*) 
+	  	FROM 	FPAY
+	    WHERE	MID = #{mid}
+	    
+</select>
+
+<update id="update">
+
+UPDATE 	fund
+	SET		FUNDNAME = #{fundName}, PR = #{pr}, 
+			TARGETPRICE = #{targetPrice}, STARTDATE = #{startDate}, ENDDATE = #{endDate}
+	WHERE FNO = #{fno}
+
+</update>
+
+<delete id="delete">
+
+DELETE fund WHERE FNO = #{fno}
+
+</delete>
+
+
+
+<insert id="insertPay">
+  <selectKey keyProperty="fpno" order="BEFORE" resultType="int">
+        SELECT SEQ_FPAY_FPNO.nextval FROM dual 
+    </selectKey>
+
+    INSERT INTO FPAY (FPNO, MID, FNO, AMOUNT)
+    VALUES (#{fpno}, #{mid}, #{fno}, #{amount})
+
+</insert>
+
+
+<update id="partcpntCntUpdate">
+    UPDATE fund
+    SET PARTCPNTCNT = PARTCPNTCNT + 1
+    WHERE FNO = #{fno}
+</update>
+<!-- 
+<select id="selectMyPay" resultMap="fundpayMap">
+
+<![CDATA[
+    SELECT *
+    FROM (SELECT ROWNUM rn, fpay.*, fund.FUNDNAME
+        FROM fpay
+        JOIN fund ON fpay.FNO = fund.FNO
+        WHERE FUND.MID = #{mid}
+   		AND rownum <= #{cri.amount} * #{cri.pageNum}
+   		ORDER BY PAYDATE DESC)fpay
+   	    WHERE rn > #{cri.amount} * (#{cri.pageNum} - 1)    	
+    ]]>
+
+</select> -->
+
+<select id="selectMyPay" resultMap="fundpayMap">
+
+<![CDATA[
+            SELECT * FROM (
+    SELECT ROWNUM rn, f.*
+    FROM (
+        SELECT fpay.*, fund.FUNDNAME
+        FROM fpay
+        JOIN fund ON fpay.fno = fund.fno
+        WHERE fpay.MID = #{mid}
+        ORDER BY PAYDATE DESC
+    ) f
+    WHERE ROWNUM <= #{cri.amount} * #{cri.pageNum}
+) WHERE rn > #{cri.amount} * (#{cri.pageNum} - 1)    	
+    ]]>
+
+</select>
+
+
+
+
+<!-- <update id="totalPriceUpdate">
+    UPDATE fund
+    SET fund.TOTALPRICE = fund.TOTALPRICE
+    + (SELECT amount FROM fpay WHERE fpay.FNO = #{fno})
+    WHERE fund.FNO = #{fno}
+</update> -->
+
+<!-- <update id="totalPriceUpdate">
+        UPDATE fund
+        SET TOTALPRICE = TOTALPRICE + (SELECT amount FROM fpay WHERE FNO = #{fno})
+        WHERE FNO = #{fno}
+</update> -->
+
+<!-- <select id="selectAllPaging" resultMap="fundMap">
+    <![CDATA[ 
+
+SELECT FUND.*, PHOTO, NAME
+FROM (
+    SELECT ROWNUM rn, FUND.*, ARTIST.PHOTO, A_MEMBER.NAME
+    FROM FUND
+    JOIN ARTIST ON FUND.MID = ARTIST.MID
+    JOIN A_MEMBER ON FUND.MID = A_MEMBER.MID
+    WHERE ROWNUM <= #{amount} * #{pageNum}     ]]>
+            <if test="#{sort} != null">
+            ORDER BY 
+            <choose>
+                <when test="#{sort} == 'latest'">
+                    FNO DESC
+                </when>
+                <when test="#{sort} == 'price'">
+                    TOTALPRICE DESC
+                </when>
+                <when test="#{sort} == 'deadline'">
+                    ENDDATE DESC
+                </when>
+                <otherwise>
+                   FNO DESC
+                </otherwise>
+            </choose>
+        </if>
+    <![CDATA[ ) FUND
+WHERE rn > #{amount} * (#{pageNum} - 1)
+    ]]>
+</select> -->
+
+
+</mapper>

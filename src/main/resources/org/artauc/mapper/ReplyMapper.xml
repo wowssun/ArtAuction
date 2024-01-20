@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="org.artauc.mapper.ReplyMapper">
+
+<resultMap type="org.artauc.domain.ReplyVO" id="replyMap">
+	
+  		<result property="rpno" column="rpno"/>
+  		<result property="frno" column="frno"/>
+  		<result property="mid" column="mid"/>
+  		<result property="reply" column="reply"/>
+  		<result property="regDate" column="reg_date"/>
+  		<result property="updateDate" column="update_date"/>
+  		<result property= "title" column="title"/>
+  		
+  	</resultMap>
+
+	<!-- 댓글 개수 가져오는 select문 추가하기  -->
+	<select id="selectReply" resultType="int">
+	
+		SELECT COUNT(*) FROM REPLY WHERE frno= #{frno}
+	</select>
+	
+	<!-- 나의 댓글 개수  -->
+	<select id="totalmy" resultType="int">
+	
+		SELECT COUNT(*) 
+		FROM REPLY 
+		WHERE mid= #{mid}
+	</select>
+
+
+	<insert id="reInsert">
+		INSERT INTO REPLY(rpno,frno,reply,mid)
+		VALUES (SEQ_REPLY_rpno.nextval, #{frno}, #{reply}, #{mid})	
+	</insert>
+
+
+	 <select id="reSelect" resultMap="replyMap">
+	    SELECT * FROM REPLY WHERE rpno = #{rpno}    <!-- 파라미터로 보내면 여기에 알아서 들어간다. -->
+	  </select>
+	  
+	  <!--  페이징이랑 검색기능 (다이나믹 쿼리를 사용해서), 댓글 정렬은 오름차순-->
+  <select id="reSelectAllPaging" resultMap="replyMap">
+	<![CDATA[
+			 SELECT rpno, frno, reply, mid, reg_date, update_date
+    		 FROM (SELECT /*+INDEX(REPLY idx_reply) */
+       		 rownum rn,rpno, frno, reply, mid, reg_date, update_date
+       		 FROM REPLY
+      		 WHERE frno = #{frno} 
+       		 AND rownum <= #{cri.amount} * #{cri.pageNum} )
+       		 WHERE rn > #{cri.amount} * ( #{cri.pageNum} -1)]]> 
+  </select>
+  
+    <!--  페이징이랑 검색기능 (다이나믹 쿼리를 사용해서), 댓글 정렬은 오름차순-->
+  <select id="reSelectAllmy" resultMap="replyMap">
+	<![CDATA[
+			 SELECT rpno, frno, reply, mid, reg_date, update_date, title
+    		 FROM (SELECT /*+INDEX(REPLY idx_reply) */
+       		 rownum rn,rp.rpno, rp.frno, reply, rp.mid, rp.reg_date, rp.update_date, fr.title
+       		 FROM REPLY rp
+       		 JOIN FREE fr ON fr.frno=rp.frno
+      		 WHERE rp.mid = #{mid} 
+       		 AND rownum <= #{cri.amount} * #{cri.pageNum}
+       		 ORDER BY rpno DESC )
+       		 WHERE rn > #{cri.amount} * ( #{cri.pageNum} -1)]]> 
+  </select>
+	
+
+	<update id="reUpdate">
+	  	UPDATE REPLY SET reply = #{reply}, update_date = SYSDATE
+	  	WHERE rpno = #{rpno}
+  	</update>
+  	
+  	<delete id="reDelete">
+ 	 DELETE FROM REPLY WHERE rpno = #{rpno}
+   </delete>
+   
+   <delete id="reDeleteAll">
+ 	 DELETE FROM REPLY WHERE frno = #{frno}
+   </delete>
+
+
+</mapper>

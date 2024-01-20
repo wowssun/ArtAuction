@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="org.artauc.mapper.ClassAttachMapper">
+	
+	<!-- 업로드 등록 -->
+	<insert id="caInsert">
+		INSERT INTO class_attach VALUES(#{cno}, #{uuid}, #{upfolder}, #{filename})
+	</insert>
+	
+	<!-- 업로드 목록 -->
+	<select id="caSelect" resultType="org.artauc.domain.ClassAttachVO">
+		SELECT * FROM class_attach WHERE cno=#{cno}
+	</select>
+	
+	<!-- 하나 지우기 -->
+	<delete id="caDelete">
+		DELETE class_attach WHERE uuid=#{uuid}
+	</delete>
+	
+	<!-- 다 지우기 -->
+	<delete id="caDeleteAll">
+		DELETE class_attach WHERE cno=#{cno}
+	</delete>
+
+	<!-- 어제 파일 옮기기?-->
+	<select id="yesterdayFile" resultType="org.artauc.domain.ClassAttachVO">
+		SELECT *
+		FROM class_attach
+		WHERE upfolder = TO_CHAR(sysdate-1, 'YYYY/MM/DD')
+	</select>
+
+</mapper>

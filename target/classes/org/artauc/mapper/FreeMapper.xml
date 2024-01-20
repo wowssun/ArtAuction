@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  
+  <!--인터페이스와  파일이름이같아야한다.  -->
+  <!-- id와 인터페이스의 메서드 이름과 같아야 한다. -->
+  <!-- resultType도 가져와야 한다.  -->
+  <!-- vo면 vo 하나에다가 담고 여러개?면 자동으로 list로 바꿔서 담아준다. -->
+  <!-- 쿼리문 안에 대소문자 기호가 들어갈 경우에 ![CDATA[]] 를 사용해서 담아줘야 한다.  -->
+  <!-- 여기에서는 mapper로 패키지 이름 적어놓음 -->
+  
+<mapper namespace="org.artauc.mapper.FreeMapper">
+
+<resultMap type="org.artauc.domain.FreeVO" id="freeMap">  <!--property에 있는건 vo에 있는거  column에는 db에 있는 이름으로 -->
+  																  <!-- 만약에 db와 vo의 이름이 다를때 이렇게 처리해줄 수 있다. -->
+  		<!-- 기본키 -->
+  		<id property="frno" column="frno"/>
+  		
+  		<!--result는 값 하나만 가지고 있는  -->
+  		<result property="frno" column="frno"/>
+  		<result property="mid" column="mid"/>
+  		<result property="title" column="title"/>
+  		<result property="content" column="content"/>
+  		<result property="regDate" column="reg_date"/>
+  		<result property="updateDate" column="update_date"/>
+  		<result property="replyCnt" column="reply_cnt"/>
+  		<result property="hit" column="hit"/>
+  		
+  		<!-- 값 여러개 가지고 있는 VO와 이름 맞춰서  -->
+  		<collection property="attachList" resultMap="attachMap"/>
+  	
+  	</resultMap>
+
+	<resultMap type="org.artauc.domain.FreeAttachVO" id="attachMap">
+	
+  		<result property="frno" column="frno"/>
+  		<result property="uuid" column="uuid"/>
+  		<result property="upfolder" column="upfolder"/>
+  		<result property="filename" column="filename"/>
+  		<result property="image" column="image"/>
+  		
+  	</resultMap>
+
+
+	<!-- 쿼리 보관 -->
+	<sql id="criteria">
+		<!-- 제일 앞에 ( 를 붙이고, where 뒤에 바로 and 나 or이  오면 안되기 때문에 trim 먼저-->
+	    			<!-- 앞부분에 시작하는 (랑 끝에는 )랑 AND로 마무리한다. -->
+	    			<trim prefix="(" suffix=") AND" prefixOverrides="OR">
+	    				<foreach item="type" collection="typeArr"> <!-- 여기서 collection 쓰는 이유 더 알아보기. -->
+	    					<trim prefix="OR">						<!-- 앞부분 빼고 where이어주는거 or를 붙임  -->
+	    					<choose>
+	    						<when test="type == 'T'.toString()">
+	    							title LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    						<when test="type == 'C'.toString()">
+	    							content LIKE '%'||#{keyword}||'%' 						
+	    						</when>
+	    						<when test="type == 'W'.toString()">
+	    							mid LIKE '%'||#{keyword}||'%' 						
+	    						</when>		
+	    					</choose>
+	   						</trim>
+	    				</foreach>
+	    			</trim>
+	    			<!-- 마지막에 )를 붙인 후 원래 있었던 쿼리와 연결해야 하니 AND를 붙인다. -->
+		</sql>
+
+ <select id="selectAll" resultMap="freeMap">
+
+  <![CDATA[ 
+    SELECT * FROM FREE WHERE frno > 0	 ]]>  <!-- 여기 왜이렇게 쓰는지 0보다 크게 -->
+
+  </select>
+  
+	<!--   페이징이랑 검색기능 (다이나믹 쿼리를 사용해서) -->
+<select id="selectAllPaging" resultMap="freeMap">
+<![CDATA[ SELECT frno, title, content, mid, reg_date, update_date, reply_cnt,hit
+ FROM ( SELECT /*+INDEX_DESC(FREE pk_free) */ 
+ rownum rn, frno, title, content, mid, reg_date, update_date, reply_cnt, hit
+ FROM FREE WHERE ]]>
+<!--  보관해둔 쿼리 사용(검색기능)   -->
+<include refid="criteria"/>
+<![CDATA[ rownum <= #{amount} * #{pageNum}
+ ORDER BY frno DESC )
+ WHERE rn > #{amount} * ( #{pageNum} -1) ]]>
+
+</select>
+  
+  <select id="totalCount" resultType="int">
+   	SELECT COUNT(*) FROM FREE
+	WHERE
+	   	<!-- 보관해둔 쿼리 사용  -->
+		<include refid="criteria"></include>
+	 <![CDATA[	frno > 0 ]]>
+  </select>
+
+
+  <select id="select" resultMap="freeMap">
+    SELECT * FROM FREE WHERE frno = #{frno}    <!-- 파라미터로 보내면 여기에 알아서 들어간다. -->
+  </select> 
+  
+  <!-- #{} 안에 들어가는건 꼭  VO와 이름이 같아야 한다.  -->
+  <!--  게시판 목록에 댓글수가 떠야함. insert될때  update가 된다.-->
+  <insert id="insert" >
+  	INSERT INTO FREE(frno,title, content, mid  )
+ 	VALUES(SEQ_FREE_FRNO.nextval, #{title}, #{content}, #{mid} )
+  </insert>
+  
+  <!-- insert를 하기 전에 key를 증가시켜서 시퀀스가 먼저 증가된 후에 그 값을 알아야 하는경우 -->
+  <!-- pk 값을 미리 처리해서 bno에 저장 -->
+  <insert id="insertSelectKey" >
+  <selectKey keyProperty="frno" order="BEFORE" resultType="int">
+    SELECT SEQ_FREE_FRNO.nextval FROM dual
+  </selectKey> 
+    
+    <!-- 시퀀스 대신 저장해 둔 bno를 사용 -->
+  	INSERT INTO FREE(frno,title, content, mid)
+ 	VALUES(#{frno}, #{title}, #{content}, #{mid})
+  </insert>
+  
+  <delete id="delete">
+ 	 DELETE FROM FREE WHERE frno = #{frno}
+  </delete>
+  
+  <update id="update">
+  	UPDATE FREE SET title = #{title}, content = #{content}, mid = #{mid}, update_date = SYSDATE
+  	WHERE frno = #{frno}
+  
+  </update>
+  
+  <!-- 댓글 수 업데이트 -->
+  <!-- 댓글이  insert가 되면   -->
+  <update id="updateReplyCnt">
+  
+  	UPDATE FREE SET reply_cnt = reply_cnt + #{amount} WHERE  frno = #{frno}
+  
+  </update>
+  
+  
+  <!-- 조회수 업데이트 -->
+  <update id="updateHit">
+  
+  	UPDATE FREE SET hit = hit + 1 WHERE frno = #{frno}
+  
+  </update>
+  
+  <!-- 자유게시판 내 목록 카운트-->
+  <select id="mycount" resultType="int">
+ 			SELECT COUNT(*)
+			FROM free 
+			WHERE mid = #{mid}	
+		
+  </select> 
+  
+  <!-- 내 게시글 목록  -->
+  <select id="selectAllmy" resultMap="freeMap">
+	<![CDATA[ SELECT frno, title, content, mid, reg_date, update_date, reply_cnt,hit
+	 FROM ( SELECT /*+INDEX_DESC(FREE pk_free) */ 
+	 rownum rn, frno, title, content, mid, reg_date, update_date, reply_cnt, hit
+	 FROM FREE 
+	 WHERE mid = #{mid} ]]>
+	<![CDATA[ 
+	 AND rownum <= #{cri.amount} * #{cri.pageNum} )
+	 WHERE rn > #{cri.amount} * ( #{cri.pageNum} -1) ]]>
+
+  </select>
+</mapper>
+
+
+

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.artauc.mapper.BidMapper">
+
+	<resultMap id="bidResultMap" type="org.artauc.domain.BidVO">
+		<!-- bid 테이블의 컬럼 매핑 -->
+		<id property="bno" column="BNO" />
+		<result property="mid" column="MID" />
+		<result property="ano" column="ANO" />
+		<result property="priceB" column="PRICEB" />
+
+		<!-- auc 테이블의 priceC, artName 컬럼 매핑 -->
+		<association property="aucVO"
+			javaType="org.artauc.domain.BidVO">
+			<id property="ano" column="ANO" />
+			<result property="priceC" column="PRICEC" />
+			<result property="artName " column="ARTNAME" />
+			<result property="artImg " column="ARTIMG" />
+			<!-- auc 테이블의 나머지 컬럼들도 필요한 경우 추가로 매핑 -->
+		</association>
+	</resultMap>
+
+	<!-- JOIN을 활용한 SELECT 쿼리 -->
+	<select id="getBid" resultMap="bidResultMap">
+		SELECT b.BNO, b.MID, b.ANO, b.PRICEB,
+		a.PRICEC, a.ARTNAME, a.ARTIMG
+		FROM BID b
+		JOIN AUC a ON b.ANO = a.ANO
+	</select>
+
+	<insert id="insert">
+		<!-- PK 값을 미리 처리해서 ano에 저장 -->
+		<selectKey keyProperty="bno" order="BEFORE" resultType="int">
+			SELECT SEQ_BID_BNO.NEXTVAL FROM dual
+		</selectKey>
+
+		<!-- 시퀀스 대신 저장해 둔 ano와 JOIN을 활용한 PRICEC 및 ARTNAME 사용 -->
+		INSERT INTO BID (BNO, MID, ANO, PRICEB,
+		PRICEC, ARTNAME , ARTIMG, BIDDATE)
+		SELECT #{bno}, #{mid}, #{ano}, #{priceB},
+		a.PRICEC, a.ARTNAME , a.ARTIMG,  SYSDATE
+		FROM AUC a
+		WHERE a.ANO = #{ano}
+	</insert>
+
+
+	<!-- <select id="bidlist" resultType="org.artauc.domain.BidVO"> SELECT * 
+		FROM BID WHERE mid = #{mid} </select> -->
+
+	<select id="bidCount" resultType="int">
+
+		SELECT COUNT(*)
+		FROM BID
+		WHERE
+		mid
+		= #{mid}
+	</select>
+
+	<select id="bidlist" resultType="org.artauc.domain.BidVO">
+  <![CDATA[
+    SELECT BNO, MID, ANO, PRICEB, PRICEC, BIDDATE, ARTNAME, ARTIMG
+    FROM (
+      SELECT /*+INDEX_DESC(BID PK_BNO) */ rownum rn, 
+      BNO, MID, ANO, PRICEB, PRICEC, BIDDATE, ARTNAME, ARTIMG
+      FROM BID
+       WHERE MID = #{mid}
+   AND rownum <= #{cri.amount} * #{cri.pageNum})
+    WHERE rn > #{cri.amount} * (#{cri.pageNum} - 1)
+    ORDER BY BNO DESC  
+  ]]>
+	</select>
+
+</mapper>

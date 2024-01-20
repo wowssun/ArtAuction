@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.artauc.mapper.ArtMapper">
+<!-- 쿼리 보관 -->
+	<sql id="criteria">
+		<!-- 제일 앞에 ( 를 붙이고, where 뒤에 바로 and 나 or이  오면 안되기 때문에 trim 먼저-->
+	    			<!-- 앞부분에 시작하는 (랑 끝에는 )랑 AND로 마무리한다. -->
+	    			<trim prefix="(" suffix=") AND" prefixOverrides="OR">
+	    				<foreach item="type" collection="typeArr"> <!-- 여기서 collection 쓰는 이유 더 알아보기. -->
+	    					<trim prefix="OR">						<!-- 앞부분 빼고 where이어주는거 or를 붙임  -->
+	    					<choose>
+	    						<when test="type == 'N'.toString()">
+	    							ARTNAME LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    						<when test="type == 'T'.toString()">
+	    							ARTIST LIKE '%'||#{keyword}||'%' 						
+	    						</when>			
+	    					</choose>
+	   						</trim>
+	    				</foreach>
+	    			</trim>
+	    			<!-- 마지막에 )를 붙인 후 원래 있었던 쿼리와 연결해야 하니 AND를 붙인다. -->
+		</sql>
+
+  
+
+ <insert id="insert">
+    <!-- PK 값을 미리 처리해서 ano에 저장 -->
+    <selectKey keyProperty="ano" order="BEFORE" resultType="int">
+        SELECT SEQ_ART_ANO.nextval FROM dual 
+    </selectKey>
+
+    INSERT INTO ART (ANO, MID, ARTIST, ARTNAME, GENRE, ASIZE, INTRO, ARTIMG)
+    VALUES (#{ano}, #{mid}, #{artist}, #{artName}, #{genre}, #{asize}, #{intro}, #{artImg})
+</insert>
+ 
+
+<select id="select" resultType="org.artauc.domain.ArtVO">
+
+ SELECT * FROM art WHERE ANO = #{ano}
+
+</select>
+
+<select id="selectAllPaging" resultType="org.artauc.domain.ArtVO">
+    <![CDATA[ 
+    SELECT ANO, MID, ARTIST, ARTNAME, GENRE, ASIZE, ARTIMG
+    FROM (SELECT /*+INDEX_DESC(art SYS_C008247) */
+                rownum rn, ANO, MID, ARTIST, ARTNAME, GENRE, ASIZE, ARTIMG
+           FROM art
+           WHERE
+    ]]>
+    <if test="keyword != null and keyword != ''">
+    <include refid="criteria"></include>
+    </if>
+    <![CDATA[
+                rownum <= #{amount} * #{pageNum})
+           WHERE rn > #{amount} * (#{pageNum} - 1)    	
+    ]]>
+</select>
+
+<select id="selectAll" resultType="org.artauc.domain.ArtVO">
+	<![CDATA[	SELECT * FROM art WHERE ano >0  ]]>
+</select>
+
+<select id="selectMyArt" resultType="org.artauc.domain.ArtVO">
+    <![CDATA[
+    SELECT ANO, MID, ARTIST, ARTNAME, GENRE, ASIZE, ARTIMG
+    FROM (
+        SELECT rownum rn, ANO, MID, ARTIST, ARTNAME, GENRE, ASIZE, ARTIMG
+        FROM art
+        WHERE MID = #{mid}
+        AND rownum <= #{cri.amount} * #{cri.pageNum}
+        ORDER BY ANO DESC
+    ) 
+    WHERE rn > #{cri.amount} * (#{cri.pageNum} - 1)
+    ]]>
+</select>
+
+<select id="selectMyArtF" resultType="org.artauc.domain.ArtVO">
+    SELECT *
+    FROM art
+	WHERE MID = #{mid}
+</select>
+
+
+<select id="totalCount" resultType="int">
+  	<![CDATA[ 
+	  	SELECT 	COUNT(*) 
+	  	FROM 	art
+	    WHERE	]]>
+	<if test="keyword != null and keyword != ''">
+    <include refid="criteria"></include>
+    </if>
+	<![CDATA[ 	ano > 0	]]>
+</select>
+
+<select id="myArtCount" resultType="int">
+	  	SELECT 	COUNT(*) 
+	  	FROM 	art
+	    WHERE	MID = #{mid}
+	    
+</select>
+
+<!-- <update id="update" parameterType="org.artauc.domain.ArtVO">
+
+UPDATE 	art
+	SET		ARTNAME = #{artName}, GENRE = #{genre}, 
+			ASIZE = #{asize}, INTRO = #{intro}, ARTIMG = #{artImg}
+	WHERE	ano = #{ano}
+
+</update> -->
+
+<update id="update">
+
+UPDATE 	art
+	SET		ARTNAME = #{artName}, GENRE = #{genre}, 
+			ASIZE = #{asize}, INTRO = #{intro}, ARTIMG = #{artImg}
+	WHERE	ano = #{ano}
+
+</update>
+
+
+<delete id="delete">
+
+DELETE art WHERE ANO = #{ano}
+
+</delete>
+
+
+  
+</mapper>

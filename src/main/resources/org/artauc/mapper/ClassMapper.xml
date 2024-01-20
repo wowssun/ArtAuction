@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="org.artauc.mapper.ClassMapper">
+
+	<!-- 목록 전체 불러오기 -->
+	<select id="selectAll" resultType="org.artauc.domain.ClassVO"> <!-- resultMap으로 바꿈, 보통 조인이 없으면 별칭 씀 -->
+		SELECT cno AS cno, mid AS mid,
+			   class_name AS classname,
+			   class_info AS classinfo,
+			   class_date AS classdate,
+			   class_time AS classtime,
+			   people_num AS peoplenum,
+			   running_time AS runningtime,
+			   class_img AS classimg,
+			   reqcnt AS reqcnt
+		FROM oneclass WHERE cno > 0
+	</select>
+
+	<!-- 내 클래스 개설 목록 -->
+	<select id="selectMyAll" resultType="org.artauc.domain.ClassVO">
+		SELECT cno AS cno, mid AS mid,
+			   class_name AS classname,
+			   class_info AS classinfo,
+			   class_date AS classdate,
+			   class_time AS classtime,
+			   people_num AS peoplenum,
+	 		   running_time AS runningtime,
+	 		   class_img AS classimg,
+	 		   reqcnt AS reqcnt
+	    FROM oneclass WHERE mid = #{mid}
+	</select>
+
+	<!-- 클래스 상세보기 -->
+	<select id="select" resultType="org.artauc.domain.ClassVO">
+		SELECT cno AS cno,
+			   mid AS mid,
+			   class_name AS classname,
+			   class_info AS classinfo,
+			   class_date AS classdate,
+			   class_time AS classtime,
+			   people_num AS peoplenum,
+	 		   running_time AS runningtime,
+	 		   class_img AS classimg,
+	 		   reqcnt AS reqcnt 
+		FROM oneclass WHERE cno=#{cno}
+	</select>
+
+	<!-- 클래스 등록 -->
+	<insert id="insert">
+		INSERT INTO oneclass(cno, mid, class_name, class_info, class_date,
+		                     class_time, people_num, running_time, class_img) 
+		VALUES(seq_class_cno.nextval, #{mid}, #{classname}, #{classinfo},
+		       #{classdate}, #{classtime}, #{peoplenum}, #{runningtime}, #{classimg})
+	</insert>
+
+	<!-- 클래스 수정 -->
+	<update id="update">
+		UPDATE oneclass
+		SET class_name=#{classname}, 
+		class_info=#{classinfo},
+		class_date=#{classdate},
+		class_time=#{classtime},
+		people_num=#{peoplenum},
+		running_time=#{runningtime},
+		class_img=#{classimg}
+		WHERE cno=#{cno}
+	</update>
+
+	<!-- 클래스 삭제 -->
+	<delete id="delete">
+		DELETE oneclass WHERE cno=#{cno}
+	</delete>
+	
+	
+	<!-- 클래스 신청자 수 업데이트 -->
+	<update id="updateReqCnt"> <!-- cntUpdate +1, -1 여부에 따라 수 달라짐 -->
+		UPDATE oneclass SET reqcnt = reqcnt + #{cntUpdate} WHERE cno=#{cno}
+	</update>
+	
+	
+	
+	<!-- 클래스 신청 본인 확인 -->
+	<select id="selectReqMe" resultType="int">
+		SELECT COUNT(*) FROM class_req
+		WHERE cno=#{cno} AND mid=#{mid}
+	</select>
+	
+	
+
+</mapper>

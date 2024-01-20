@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  
+  <mapper namespace="org.artauc.mapper.MainMapper">
+  
+  	<resultMap type="org.artauc.domain.MemberVO" id="memberMap">  <!--property에 있는건 vo에 있는거  column에는 db에 있는 이름으로 -->
+  																  <!-- 만약에 db와 vo의 이름이 다를때 이렇게 처리해줄 수 있다. -->
+  		<!-- 기본키 -->
+  		<id property="mid" column="mid"/>
+  		
+  		<!--result는 값 하나만 가지고 있는  -->
+  		<result property="mid" column="mid"/>
+  		<result property="pw" column="pw"/>
+  		<result property="name" column="name"/>
+  		<result property="phone" column="phone"/>
+  		<result property="email" column="email"/>
+  		<result property="joinDate" column="join_date"/>
+  		<result property="stopDate" column="stop_date"/>
+  		<result property="enabled" column="enabled"/>
+  		
+  		<!-- 값 여러개 가지고 있는 VO와 이름 맞춰서  -->
+  		<!-- <collection property="auth" resultMap="authMap"/> -->
+  		<association property="auth" javaType="org.artauc.domain.AuthVO" >
+  			<result property="auth" column="authority"/>
+  		</association>
+  	
+  	</resultMap>
+  	
+  	<resultMap type="org.artauc.domain.AuthVO" id="authMap">
+	
+  		<result property="mid" column="mid"/>
+  		<result property="auth" column="authority"/>
+  		
+  	</resultMap>
+  	 
+  	  <!-- 로그인  -->	
+  	  <!-- developer에서 복사해서 가지고 올때 ; 빼기 !! -->
+  	  <!-- vo객체 하나였으면 resultType을 사용해서  vo를 넣어주었다.-->
+	  <select id="select" resultMap="memberMap">
+	  
+	  	SELECT m.mid, m.name, m.pw, m.phone, m.email, m.join_date, m.stop_date, m.enabled, a.authority
+		FROM A_MEMBER m
+		JOIN AUTH a
+		ON m.mid = a.mid
+ 		WHERE m.mid = #{mid}
+ 		
+	 </select>
+	  
+	  <!-- 회원가입  -->
+	  <insert id="insert">
+
+        INSERT INTO A_MEMBER (mid, name, pw, phone, email, join_date)
+		VALUES (#{mid}, #{name}, #{pw}, #{phone}, #{email}, SYSDATE)
+		
+	  </insert>
+	  
+	  <insert id="authInsert">
+	  
+		INSERT INTO AUTH (mid, authority)
+		VALUES (#{mid}, 'ROLE_USER')
+	  
+	  </insert>
+	  
+	  
+	  <!-- 아이디 중복체크  -->
+	  <select id="idCheck" resultType="int">
+	 	SELECT COUNT(*)
+		FROM A_MEMBER
+		WHERE mid = #{mid}
+	  </select>
+	  
+	  
+	  <!-- 아이디 찾기  -->
+	  <select id="midSearch" resultType="String">
+	    SELECT mid
+		FROM A_MEMBER
+		WHERE name = #{name}
+		AND phone = #{phone}
+	  </select>
+	  
+	  
+	  <!-- 비밀번호 찾기 -->
+	  <select id="pwSearch" resultType="int">
+	  	SELECT COUNT(*)
+		FROM A_MEMBER
+		WHERE mid = #{mid}
+		AND phone = #{phone}
+		AND name = #{name}
+	  </select>
+	  
+	  
+	  <!-- 비밀번호 변경 -->
+	  <update id="pwUpdate">
+	  	UPDATE A_MEMBER 
+	  	SET pw = #{pw}
+	  	WHERE mid = #{mid}
+  	 </update>
+	 
+	  
+  </mapper>

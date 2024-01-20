@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="org.artauc.mapper.ReviewMapper">
+<!-- 	<resultMap type="org.artauc.domain.ReviewVO" id="rvoMapper"> -->
+<!-- 		<id property="rno" column="rno" /> -->
+<!-- 		<result property="mid" column="mid" /> -->
+<!-- 		<result property="reviewscript" column="review_script" /> -->
+<!-- 		<result property="uploaddate" column="upload_date" /> -->
+<!-- 		<collection property="cvoList" ofType="org.artauc.domain.ClassVO"> -->
+<!-- 			<id property="cno" column="cno" /> -->
+<!-- 			<result property="classname" column="class_name" /> -->
+<!-- 		</collection> -->
+<!-- 	</resultMap> -->
+	<resultMap type="org.artauc.domain.ReviewVO" id="rvoMapper">
+		<id property="rno" column="rno" />
+		<result property="cno" column="cno" />
+		<result property="mid" column="mid" />
+		<result property="reviewscript" column="review_script" />
+		<result property="uploaddate" column="upload_date" />
+		<association property="cvo" javaType="org.artauc.domain.ClassVO">
+			<result property="classname" column="class_name"></result>
+		</association>
+	</resultMap>
+	
+	<!-- 클래스 전체 리뷰 목록 -->
+	<select id="selectAll" resultMap="rvoMapper">
+		SELECT rno, cno, mid,
+			   review_script AS reviewscript,
+			   upload_date AS uploaddate
+		FROM review WHERE cno=#{cno}
+	</select>
+	
+	<!-- 내 리뷰 목록 -->
+	<select id="selectMyAll" resultMap="rvoMapper">
+		SELECT c.class_name, r.review_script, r.upload_date, r.mid, c.mid, r.rno, r.cno
+		FROM review r
+		JOIN oneclass c 
+		ON c.cno = r.cno WHERE r.mid=#{mid}
+	</select>
+	
+	<!-- 리뷰 상세보기 -->
+	<select id="select" resultMap="rvoMapper">
+		SELECT r.rno, r.cno, c.class_name, r.upload_date, r.review_script, r.mid
+		FROM review r
+		JOIN oneclass c
+		ON c.cno = r.cno WHERE rno=#{rno}
+	</select>
+	
+	<!-- 리뷰 등록 -->
+	<insert id="insert">
+		INSERT INTO review VALUES(seq_review_rno.nextval, #{cno}, #{mid}, #{reviewscript}, sysdate)
+	</insert>
+	
+	<!-- 리뷰 수정 -->
+	<update id="update">
+		UPDATE review SET review_script=#{reviewscript} WHERE rno=#{rno}
+	</update>
+	
+	<!-- 리뷰 삭제 -->
+	<delete id="delete">
+		DELETE review WHERE rno=#{rno}
+	</delete>
+	
+</mapper>

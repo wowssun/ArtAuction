@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.artauc.mapper.PayMapper">
+<insert id="insert">
+		<!-- PK 값을 미리 처리해서 ano에 저장 -->
+		<selectKey keyProperty="pno" order="BEFORE" resultType="int">
+			SELECT SEQ_PAY_PNO.NEXTVAL FROM dual
+		</selectKey>
+
+		<!-- 시퀀스 대신 저장해 둔 ano를 사용 -->
+		INSERT INTO PAY (PNO, ANO, PRICE, PAYDATE)
+		VALUES (#{pno}, #{ano},	#{price}, SYSDATE)
+	</insert>
+	</mapper>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  
+  <mapper namespace="org.artauc.mapper.UserMapper">
+  
+  	<resultMap type="org.artauc.domain.MemberVO" id="memberMap">  <!--property에 있는건 vo에 있는거  column에는 db에 있는 이름으로 -->
+  																  <!-- 만약에 db와 vo의 이름이 다를때 이렇게 처리해줄 수 있다. -->
+  		<!-- 기본키 -->
+  		<id property="mid" column="mid"/>
+  		
+  		<!--result는 값 하나만 가지고 있는  -->
+  		<result property="mid" column="mid"/>
+  		<result property="pw" column="pw"/>
+  		<result property="name" column="name"/>
+  		<result property="phone" column="phone"/>
+  		<result property="email" column="email"/>
+  		<result property="joinDate" column="join_date"/>
+  		<result property="stopDate" column="stop_date"/>
+  		<result property="enabled" column="enabled"/>
+  		
+  		<!-- 값 여러개 가지고 있는 VO와 이름 맞춰서  -->
+  		<association property="auth" javaType="org.artauc.domain.AuthVO" >
+  			<result property="auth" column="authority"/>
+  		</association>
+  	
+  	</resultMap>
+  	
+  	 <resultMap type="org.artauc.domain.ArtistVO" id="artistMap">
+  	 
+  	 	<id property="mid" column="mid"/>
+	
+  		<result property="mid" column="mid"/>
+  		<result property="major" column="major"/>
+  		<result property="photo" column="photo"/>
+  		<result property="introduce" column="introduce"/>
+  		<result property="name" column="name"/>
+  		
+  		<collection property="careerlist" resultMap="careerMap"/>
+  		
+  		
+  	</resultMap>
+  	
+  	<resultMap type="org.artauc.domain.CareerVO" id="careerMap">
+ 	 
+ 	 	<id property="carno" column="carno"/>
+
+ 		<result property="carno" column="carno"/>
+ 		<result property="mid" column="mid"/>
+ 		<result property="career" column="career"/>
+ 		
+ 	</resultMap>
+  	
+  	<resultMap type="org.artauc.domain.RequestVO" id="requestMap">
+ 	 
+ 	 	<id property="requeNo" column="reque_no"/>
+
+ 		<result property="requeNo" column="reque_no"/>
+ 		<result property="mid" column="mid"/>
+ 		<result property="state" column="state"/>
+ 		<result property="requestDate" column="request_date"/>
+ 		<result property="compleDate" column="comple_date"/>
+
+ 	</resultMap>
+  	 
+  	 <!--내 정보 보기  -->
+  	  <select id="select" resultMap="memberMap">
+  	  
+  	    SELECT m.mid, m.name, m.pw, m.phone, m.email, m.join_date, m.stop_date, m.enabled, a.authority
+		FROM A_MEMBER m
+		JOIN AUTH a
+		ON m.mid = a.mid
+ 		WHERE m.mid = #{mid}
+   		
+ 	 </select>
+ 	 
+  	 <!--내 정보 수정 -->
+  	  <update id="update">
+  	  
+  	  	UPDATE A_MEMBER 
+		SET email= #{email},
+		phone = #{phone}
+		WHERE mid = #{mid}
+	  	
+  	 </update>
+  	 
+  	 <!--회원 탈퇴 -->
+  	 <delete id="delete">
+  	 
+ 		 DELETE from A_MEMBER 
+		 WHERE mid = #{mid}
+		 
+    </delete>
+    
+  	 <!-- 작가 신청 - 작가정보테이블  -->
+  	 <insert id="insert">
+  	 
+		INSERT INTO ARTIST (mid, major, introduce, photo)
+		VALUES (#{mid}, #{major}, #{introduce}, #{photo})
+		
+	  </insert>
+	  
+	  <!-- 작가 신청 - 작가신청테이블  -->
+	  <insert id="reqInsert">
+  	 
+		INSERT INTO REQUEST (reque_no,mid)
+		VALUES (SEQ_REQUEST_REQUE_NO.NEXTVAL,#{mid})
+		
+	  </insert>
+	  
+	  <!-- 작가 경력 테이블  -->
+	  <insert id="careerInsert">
+  	 
+		INSERT INTO CAREER (carno,mid,career)
+		VALUES (SEQ_CAREER_carno.NEXTVAL,#{mid}, #{career})
+		
+	  </insert>
+	  
+	  <!-- 작가 경력 정보 -->
+  	  <select id="careerSelect" resultMap="careerMap">
+  	  
+  	   SELECT * 
+   	   FROM CAREER
+       WHERE mid = #{mid}
+   		
+ 	 </select>
+ 	 
+ 	 <!-- 작가 경력 정보 모두 삭제 -->
+  	  <delete id="careerDelete" >
+  	  
+  	   DELETE FROM CAREER
+   	   WHERE mid = #{mid}
+   		
+ 	 </delete>
+	   
+  	 <!-- 작가 신청 조회 하기 -->
+  	  <select id="artSearch" resultMap="requestMap">
+  	  
+  	   SELECT state 
+   	   FROM REQUEST
+       WHERE mid = #{mid}
+       ORDER BY request_date DESC
+   		
+ 	 </select>
+ 	 
+ 	
+ 	 
+  	 <!-- 작가 정보 보기 -->
+  	  <select id="artSelect" resultMap="artistMap"> 
+  	  
+  	  	SELECT a.mid, major, introduce, photo, c.career, m.name
+		FROM ARTIST a
+		JOIN CAREER c ON a.mid = c.mid
+		JOIN A_MEMBER m ON m.mid=a.mid
+		WHERE a.mid = #{mid}
+   		
+ 	 </select>
+ 	 
+  	 <!-- 작가 정보 수정 -->
+  	  <update id="artUpdate">  
+  	  
+  	  	UPDATE ARTIST 
+		SET major = #{major}, introduce = #{introduce} , photo = #{photo}
+		WHERE mid = #{mid}
+	 
+  	 </update>
+	  
+  </mapper>

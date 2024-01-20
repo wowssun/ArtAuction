@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="org.artauc.mapper.AdminMapper">
+  
+   
+  	<resultMap type="org.artauc.domain.MemberVO" id="memberMap">  <!--property에 있는건 vo에 있는거  column에는 db에 있는 이름으로 -->
+  																  <!-- 만약에 db와 vo의 이름이 다를때 이렇게 처리해줄 수 있다. -->
+  		<!-- 기본키 -->
+  		<id property="mid" column="mid"/>
+  		
+  		<!--result는 값 하나만 가지고 있는  -->
+  		<result property="mid" column="mid"/>
+  		<result property="pw" column="pw"/>
+  		<result property="name" column="name"/>
+  		<result property="phone" column="phone"/>
+  		<result property="email" column="email"/>
+  		<result property="joinDate" column="join_date"/>
+  		<result property="stopDate" column="stop_date"/>
+  		<result property="enabled" column="enabled"/>
+  		
+  		<!-- 값 여러개 가지고 있는 VO와 이름 맞춰서  -->
+  		<association property="auth" javaType="org.artauc.domain.AuthVO" >
+  			<result property="auth" column="authority"/>
+  		</association>
+  	
+  	</resultMap>
+  	 
+    <resultMap type="org.artauc.domain.RequestVO" id="requestMap">
+ 	 
+ 	 	<id property="requeNo" column="reque_no"/>
+
+ 		<result property="requeNo" column="reque_no"/>
+ 		<result property="mid" column="mid"/>
+ 		<result property="state" column="state"/>
+ 		<result property="requestDate" column="request_date"/>
+ 		<result property="compleDate" column="comple_date"/>
+ 		
+ 		<association property="mvo" javaType="org.artauc.domain.MemberVO" >
+  			<result property="name" column="name"/>
+  			<result property="phone" column="phone"/>
+  			<result property="email" column="email"/>
+  		</association>
+
+ 	</resultMap>
+ 	
+ 	<resultMap type="org.artauc.domain.ArtistVO" id="artistMap">
+  	 
+  	 	<id property="mid" column="mid"/>
+	
+  		<result property="mid" column="mid"/>
+  		<result property="major" column="major"/>
+  		<result property="photo" column="photo"/>
+  		<result property="introduce" column="introduce"/>
+  		
+  		<collection property="careerlist" resultMap="careerMap"/>
+  		
+  	</resultMap>
+  	
+  	<resultMap type="org.artauc.domain.CareerVO" id="careerMap">
+ 	 
+ 	 	<id property="carno" column="carno"/>
+
+ 		<result property="carno" column="carno"/>
+ 		<result property="mid" column="mid"/>
+ 		<result property="career" column="career"/>
+ 		
+ 	</resultMap>
+ 	
+ 	<!-- 쿼리 보관 -->
+	<sql id="criteria3">
+		<!-- 제일 앞에 ( 를 붙이고, where 뒤에 바로 and 나 or이  오면 안되기 때문에 trim 먼저-->
+	    			<!-- 앞부분에 시작하는 (랑 끝에는 )랑 AND로 마무리한다. -->
+	    			<trim prefix="(" suffix=") AND" prefixOverrides="OR">
+	    				<foreach item="type" collection="typeArr"> <!-- 여기서 collection 쓰는 이유 더 알아보기. -->
+	    					<trim prefix="OR">						<!-- 앞부분 빼고 where이어주는거 or를 붙임  -->
+	    					<choose>
+	    						<when test="type == 'M'.toString()">
+	    							am.mid LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    						<when test="type == 'N'.toString()">
+	    							name LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    					</choose>
+	   						</trim>
+	    				</foreach>
+	    			</trim>
+	    			<!-- 마지막에 )를 붙인 후 원래 있었던 쿼리와 연결해야 하니 AND를 붙인다. -->
+		</sql>
+ 	
+ 	<!-- 쿼리 보관 -->
+	<sql id="criteria">
+		<!-- 제일 앞에 ( 를 붙이고, where 뒤에 바로 and 나 or이  오면 안되기 때문에 trim 먼저-->
+	    			<!-- 앞부분에 시작하는 (랑 끝에는 )랑 AND로 마무리한다. -->
+	    			<trim prefix="(" suffix=") AND" prefixOverrides="OR">
+	    				<foreach item="type" collection="typeArr"> <!-- 여기서 collection 쓰는 이유 더 알아보기. -->
+	    					<trim prefix="OR">						<!-- 앞부분 빼고 where이어주는거 or를 붙임  -->
+	    					<choose>
+	    						<when test="type == 'M'.toString()">
+	    							mid LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    						<when test="type == 'N'.toString()">
+	    							name LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    					</choose>
+	   						</trim>
+	    				</foreach>
+	    			</trim>
+	    			<!-- 마지막에 )를 붙인 후 원래 있었던 쿼리와 연결해야 하니 AND를 붙인다. -->
+		</sql>
+		
+		<!-- 쿼리 보관 2 조인때문에-->
+	<sql id="criteria2">
+		<!-- 제일 앞에 ( 를 붙이고, where 뒤에 바로 and 나 or이  오면 안되기 때문에 trim 먼저-->
+	    			<!-- 앞부분에 시작하는 (랑 끝에는 )랑 AND로 마무리한다. -->
+	    			<trim prefix="(" suffix=") AND" prefixOverrides="OR">
+	    				<foreach item="type" collection="typeArr"> <!-- 여기서 collection 쓰는 이유 더 알아보기. -->
+	    					<trim prefix="OR">						<!-- 앞부분 빼고 where이어주는거 or를 붙임  -->
+	    					<choose>
+	    						<when test="type == 'M'.toString()">
+	    							rq.mid LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    						<when test="type == 'N'.toString()">
+	    							am.name LIKE '%'||#{keyword}||'%' 						
+	    						</when>	
+	    					</choose>
+	   						</trim>
+	    				</foreach>
+	    			</trim>
+	    			<!-- 마지막에 )를 붙인 후 원래 있었던 쿼리와 연결해야 하니 AND를 붙인다. -->
+		</sql>
+ 
+ 	
+  <select id="mtotalCount" resultType="int">
+   	SELECT COUNT(*) FROM A_MEMBER am
+   	JOIN AUTH A ON AM.MID=A.MID WHERE
+		<include refid="criteria3"/>
+		 A.AUTHORITY = 'ROLE_USER'
+  </select>
+  
+  <select id="atotalCount" resultType="int">
+   	SELECT COUNT(*) FROM A_MEMBER am
+   	JOIN AUTH A ON AM.MID=A.MID WHERE
+		<include refid="criteria3"/>
+		 A.AUTHORITY = 'ROLE_ARTIST'
+  </select>
+  
+  <!-- 그럼 이건 신청만 한 사람, state가 대기인 상태만  -->
+  <select id="rtotalCount" resultType="int">
+  
+   	SELECT COUNT(*)
+   	FROM REQUEST rq
+	JOIN A_MEMBER am ON rq.mid = am.mid WHERE
+		<include refid="criteria2"/>
+	 <![CDATA[	reque_no > 0 ]]>
+	AND state='대기'
+  </select>
+  
+  <!-- 여기서는 승인 / 거절이 되면 comple_date에 sysdate가 입력되니까 -->
+  <select id="oknototalCount" resultType="int">
+  
+  	SELECT COUNT(*)
+  	FROM REQUEST rq
+	JOIN A_MEMBER am ON rq.mid = am.mid WHERE
+		<include refid="criteria2"/>
+	 <![CDATA[	reque_no > 0 ]]>
+	AND comple_date IS NOT NULL
+  
+  </select>
+  
+   <!-- 여기서는 거절이 되면 comple_date에 sysdate가 입력되니까 -->
+  <select id="nototalCount" resultType="int">
+  
+  	SELECT COUNT(*)
+  	FROM REQUEST rq
+	JOIN A_MEMBER am ON rq.mid = am.mid WHERE
+		<include refid="criteria2"/>
+	 <![CDATA[	reque_no > 0 ]]>
+	AND rq.state = '거절'
+  
+  </select>
+  
+   <!-- 여기서는 승인이 되면 comple_date에 sysdate가 입력되니까 -->
+  <select id="oktotalCount" resultType="int">
+  
+  	SELECT COUNT(*)
+  	FROM REQUEST rq
+	JOIN A_MEMBER am ON rq.mid = am.mid WHERE
+		<include refid="criteria2"/>
+	 <![CDATA[	reque_no > 0 ]]>
+	AND rq.state = '승인'
+  
+  </select>
+ 	
+ 	 <!--   페이징이랑 검색기능 (다이나믹 쿼리를 사용해서) -->
+      <!--회원목록  -->
+	  <select id="selectAll" resultMap="memberMap">
+	  	<![CDATA[ SELECT mid, name,join_date
+		 FROM ( SELECT /*+INDEX_DESC(A_MEMBER pk_user) */ 
+		 rownum rn, am.mid, name,join_date 
+		 FROM A_MEMBER am  
+		 JOIN AUTH A ON AM.MID = A.MID WHERE ]]>     	 
+		<include refid="criteria3"/>
+		<![CDATA[ 
+		 A.AUTHORITY = 'ROLE_USER'
+		 AND rownum <= #{amount} * #{pageNum} 
+		 ORDER BY join_date DESC)
+		 WHERE rn > #{amount} * ( #{pageNum} -1)
+		  ]]>
+	 </select>
+	 
+	 
+	 <!--잠금회원목록  -->
+	  <select id="lockSelectAll" resultMap="memberMap">
+	  	<![CDATA[ SELECT mid, name, stop_date
+		 FROM ( SELECT /*+INDEX_DESC(A_MEMBER pk_lock) */
+		 rownum rn, mid, name, stop_date  
+		 FROM A_MEMBER  
+		 WHERE stop_date is not null AND]]>
+		<include refid="criteria"/>
+		<![CDATA[  rownum <= #{amount} * #{pageNum} 
+		 ORDER BY stop_date DESC)
+		 WHERE rn > #{amount} * ( #{pageNum} -1)]]>
+		  
+	 </select>
+	 
+	 <!-- 잠금 회원 목록 총 인원수 -->
+	 <select id="locktotalCount" resultType="int">
+   	SELECT COUNT(*) FROM A_MEMBER
+   	WHERE
+		<include refid="criteria"/>
+		stop_date IS NOT NULL
+  </select>
+	  
+	<!-- 잠금해제하기  -->
+	  <update id="lockUpdate">
+	  	UPDATE AUTH
+		SET authority = 'ROLE_USER'
+		WHERE mid = #{mid}
+	  
+  	 </update>
+  	 
+  	 <!-- 잠금해제시 a_member 테이블에 stop_date null로 만들기  -->
+	  <update id="lockDateUpdate">
+	  	UPDATE A_MEMBER
+		SET stop_date = NULL
+		WHERE mid = #{mid}
+  	 </update>
+  	 
+  	 <!--  작가목록 - 멤버랑 auth join해서 auth가 role_artist인것만 가져오기  -->
+	  <select id="artSelectAll" resultMap="memberMap">
+	  	<![CDATA[ SELECT mid, name,join_date
+		 FROM ( SELECT /*+INDEX_DESC(A_MEMBER pk_artist) */ 
+		 rownum rn, am.mid, name,join_date
+		 FROM A_MEMBER am  
+		 JOIN AUTH A ON AM.MID = A.MID WHERE    ]]>
+		<include refid="criteria3"/>
+		<![CDATA[ 
+		 A.AUTHORITY = 'ROLE_ARTIST'
+		 AND rownum <= #{amount} * #{pageNum}
+		 ORDER BY join_date DESC )
+		 WHERE rn > #{amount} * ( #{pageNum} -1) ]]>
+	  	
+	 </select>
+	 
+	 <!--작가신청목록  -->
+	 <select id="requeSelectAll" resultMap="requestMap">	
+	 	<![CDATA[ SELECT reque_no, mid, name, request_date
+		 FROM ( SELECT /*+INDEX_DESC(REQUEST pk_request) */ 
+		 rownum rn, reque_no, rq.mid, am.name, rq.request_date 
+		 FROM REQUEST rq  
+		 JOIN A_MEMBER am ON rq.mid = am.mid WHERE  ]]>
+		<include refid="criteria2"/>
+		<![CDATA[  
+		 rq.state='대기'
+		 AND rownum <= #{amount} * #{pageNum}
+		 ORDER BY request_date DESC )
+		 WHERE rn > #{amount} * ( #{pageNum} -1)  ]]>
+		
+	  
+	 </select>
+	 
+	 <!-- (보류) 작가신청상세조회  usermapper에서 작가정보조회랑 똑같 -->
+	 <select id="requeselect" resultMap="requestMap">
+   		
+ 	 </select> 
+	 
+  	  
+  	  <!-- 작가 신청 승인시 권한 바뀌는거 -->
+  	   <update id="requeUpdate">
+  	   	UPDATE AUTH
+		SET authority = 'ROLE_ARTIST'
+		WHERE mid = #{mid}
+  	  </update>
+  	  
+  	  <!-- 작가 신청 거절시 작가테이블에서 삭제되기 -->
+  	   <delete id="requeDelete">
+  	   	 DELETE from ARTIST
+		 WHERE mid = #{mid}
+  	  </delete>
+  	  
+  	  <!-- 작가 신청 승인 / 거절할때 신청상황  바뀌는거 -->
+  	   <update id="stateUpdate">
+  	   	UPDATE REQUEST
+		SET state = #{state},
+		comple_date = SYSDATE
+		WHERE mid = #{mid}
+  	  </update>
+  	  
+  	  <!--  작가 승인 / 거절 목록, 승인, 거절로 카테고리화 시켜서 보려면? -->
+  	  <!-- (전체) 카테고리는 나중에 생각하고 일단 승인, 거절 상태인 회원 단체  -->
+  	   <select id="okNoSelectAll" resultMap="requestMap">
+  	   	<![CDATA[ SELECT mid, name, phone, email,state, comple_date
+		 FROM ( SELECT /*+INDEX_DESC(REQUEST pk_okrequest) */  
+		 rownum rn, rq.mid, am.name, am.phone, am.email, state,  comple_date 
+		 FROM REQUEST rq 
+		 JOIN A_MEMBER am ON rq.mid = am.mid  WHERE ]]>
+		<include refid="criteria2"/>
+		<![CDATA[ rq.comple_date IS NOT NULL 
+		 AND rownum <= #{amount} * #{pageNum} )
+		 WHERE rn > #{amount} * ( #{pageNum} -1) ]]>
+   		
+ 	 </select> 
+ 	 
+ 	  <!-- (승인) 카테고리는 나중에 생각하고 일단 승인, 거절 상태인 회원 단체  -->
+  	   <select id="okSelectAll" resultMap="requestMap">
+  	   	<![CDATA[ SELECT mid, name, phone, email,state, comple_date
+		 FROM ( SELECT /*+INDEX_DESC(REQUEST pk_okrequest) */  
+		 rownum rn, rq.mid, am.name, am.phone, am.email, state,  comple_date 
+		 FROM REQUEST rq 
+		 JOIN A_MEMBER am ON rq.mid = am.mid  WHERE ]]>
+		<include refid="criteria2"/>
+		<![CDATA[ rq.state = '승인' 
+		 AND rownum <= #{amount} * #{pageNum} )
+		 WHERE rn > #{amount} * ( #{pageNum} -1) ]]>
+   		
+ 	 </select> 
+ 	 
+ 	  <!-- (거절) 카테고리는 나중에 생각하고 일단 승인, 거절 상태인 회원 단체  -->
+  	   <select id="noSelectAll" resultMap="requestMap">
+  	   	<![CDATA[ SELECT mid, name, phone, email,state, comple_date
+		 FROM ( SELECT /*+INDEX_DESC(REQUEST pk_okrequest) */  
+		 rownum rn, rq.mid, am.name, am.phone, am.email, state,  comple_date 
+		 FROM REQUEST rq 
+		 JOIN A_MEMBER am ON rq.mid = am.mid  WHERE ]]>
+		<include refid="criteria2"/>
+		<![CDATA[ rq.state = '거절' 
+		 AND rownum <= #{amount} * #{pageNum} )
+		 WHERE rn > #{amount} * ( #{pageNum} -1) ]]>
+   		
+ 	 </select> 
+  	 
+  	 <!--회원 삭제  -->
+    <delete id="delete">
+ 	     DELETE from A_MEMBER 
+		 WHERE mid = #{mid}
+    </delete>
+	  
+		  
+  </mapper>
