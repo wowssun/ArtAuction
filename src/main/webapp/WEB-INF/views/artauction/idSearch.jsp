@@ -86,7 +86,7 @@ form .backBtn { background: rgb(213, 216, 220);}
            
           <div class="line">
 					<div class="form-group">
-						<label><b>아이디</b></label>
+						<label><b>이름</b></label>
 						<div class="input">
                     <input type="text" name="name" id="name" class="form-control" required>
                 </div>
